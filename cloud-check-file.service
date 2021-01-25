@@ -1,0 +1,10 @@
+[Unit]
+Description=Instance to serve Cloud Check File
+After=network.target
+
+[Service]
+WorkingDirectory=/home/ec2-user/apps/cloud-check-file.back
+ExecStart=/home/ec2-user/apps/cloud-check-file.back/env/bin/gunicorn /home/ec2-user/apps/cloud-check-file.back/cloud_check_file.wsgi:application --bind 127.0.0.1:8000
+
+[Install]
+WantedBy=multi-user.target
