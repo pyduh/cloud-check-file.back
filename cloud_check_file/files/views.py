@@ -14,7 +14,7 @@ from files.serializers import UploadSerializer, FileSerializer
 from files.models import Upload, File, Check
 
 from cloud_check_file.core.views import BaseApiView
-from cloud_check_file.core.utils import upload_to_s3, get_key_s3, get_file_hash, get_file_size, download_from_s3
+from cloud_check_file.core.utils import download, upload, get_file_name, get_file_hash, get_file_size
 from cloud_check_file.core.models import as_json
 
 
@@ -47,7 +47,7 @@ class UploadApiView(GenericUploadApiView):
         data = {
             'size': get_file_size(self.request.data['file']),
             'hash': get_file_hash(copy.deepcopy(self.request.data['file'])),
-            'url': upload_to_s3(self.request.data['file'], get_key_s3(self.request.user.id, file.name)),
+            'url': upload(self.request.data['file'], get_file_name(self.request.user.id, file.name)),
             'created_by': self.request.user.id
             }
 
@@ -64,7 +64,7 @@ class DownloadApiView(BaseApiView):
     def get(self, request, *args, **kwargs):
         upload = Upload.objects.filter(id=kwargs['pk']).first()
 
-        return Response({ 'url': download_from_s3(upload.url) }, status=200)
+        return Response({ 'url': download(upload) }, status=200)
 
 
 class FileApiSet(BaseApiView):
