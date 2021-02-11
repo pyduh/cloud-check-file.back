@@ -9,6 +9,9 @@ from google.cloud import datastore, storage as google_cloud_storage
 from typing import Text
 
 
+datastore_client:datastore.Client = None
+
+
 def upload(file, file_name=None, *args, **kwargs) -> Text:
     if settings.CLOUD_PROVIDER == "GOOGLE":
         return _upload_to_cloud_storage(file, file_name=file_name, *args, **kwargs)
@@ -39,21 +42,38 @@ def get_new_s3_session():
     return session
 
 
-def create_or_update_cache(file):
-    datastore_client = datastore.Client.from_service_account_json(settings.GOOGLE_AUTH)
+def get_new_datastore_session():
+    global datastore_client
+    
+    if not datastore_client:
+        datastore_client = datastore.Client.from_service_account_json(settings.GOOGLE_AUTH)
+
+    return datastore_client
+
+
+def create_or_update_cache(key, *args, **kwargs):
+    datastore_client = get_new_datastore_session()
+
     # The kind for the new entity
     kind = "cloud-check-file-cache"
 
-    entity = datastore.Entity(key=datastore_client.key(kind, file.id))
-    entity["hash"] = "Buy milk"
+    entity = datastore.Entity(key=datastore_client.key(kind, str(key)))
+
+    for key, value in kwargs.items():
+        entity[key] = value
 
     datastore_client.put(entity)
 
 
-def get_cache(file):
-    datastore_client = datastore.Client.from_service_account_json(settings.GOOGLE_AUTH)
+def get_cache(key):
+    datastore_client = get_new_datastore_session()
+    
+    entity = datastore_client.get(key=datastore_client.key("cloud-check-file-cache", key))
 
-    # TODO get the file on google datastore
+    if entity:
+        return {key: value for key, value in entity.items()}
+    
+    return None
 
 
 def _upload_to_s3(file, file_name=None, *args, **kwargs) -> Text:
@@ -65,16 +85,19 @@ def _upload_to_s3(file, file_name=None, *args, **kwargs) -> Text:
 
 
 def _upload_to_cloud_storage(file, file_name=None, *args, **kwargs) -> Text:
+    file_name = file_name if file_name else file.name
+
     client = google_cloud_storage.Client.from_service_account_json(settings.GOOGLE_AUTH)
     bucket = client.bucket(settings.GOOGLE_STORAGE_BUCKET)
     blob = bucket.blob(file_name)
 
+    print("Init")
     blob.upload_from_file(
         file,
         content_type=file.content_type
     )
     
-    blob.make_private()
+    #blob.make_private()
 
     return file_name
 
