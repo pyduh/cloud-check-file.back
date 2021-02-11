@@ -1,0 +1,6 @@
+runtime: python39
+service: back
+entrypoint: gunicorn --chdir ./cloud_check_file -b :$PORT --timeout 120 cloud_check_file.wsgi 
+
+manual_scaling:
+    instances: 1    
