@@ -14,7 +14,7 @@ from files.serializers import UploadSerializer, FileSerializer
 from files.models import Upload, File, Check
 
 from cloud_check_file.core.views import BaseApiView
-from cloud_check_file.core.utils import download, upload, get_file_name, get_file_hash, get_file_size
+from cloud_check_file.core.utils import download, upload, get_file_name, get_file_hash, get_file_size, create_or_update_cache, get_cache
 from cloud_check_file.core.models import as_json
 
 
@@ -28,14 +28,21 @@ class PublicUploadApiView(GenericUploadApiView):
     def create(self, request, *args, **kwargs):
         match = False
         hash = get_file_hash(self.request.data['file'])
-        file, uploaded_hash = File.objects.filter(id=self.request.data['id']).first(), None
-        
-        if file:
-            match = file.upload.hash == hash
+
+        cache = get_cache(self.request.data['id'])
+
+        if cache:
+            match = cache['hash'] == hash   
+
+        else:
+            file = File.objects.filter(id=self.request.data['id']).first()
+
+            if file:
+                match = file.upload.hash == hash
 
         Check(file_id=self.request.data['id'], match=match, hash=hash).save()
 
-        return Response(data={'hash': hash, 'file': file.id if file else None, 'match': match}, status=200)
+        return Response(data={'hash': hash, 'file': self.request.data['id'], 'match': match}, status=200)
 
 
 class UploadApiView(GenericUploadApiView):
@@ -81,9 +88,11 @@ class FileApiSet(BaseApiView):
         serializer = FileSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         
-        self._id = serializer.save().id
+        object = serializer.save()
 
-        return Response(data={'file_id': self._id}, status=201)
+        create_or_update_cache(object.id, hash=object.upload.hash)
+        
+        return Response(data={'file_id': object.id}, status=201)
 
 
     def delete(self, request, *args, **kwargs):
