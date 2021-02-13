@@ -1,10 +1,13 @@
 from django.contrib.auth.models import User
+from django.forms.models import model_to_dict
 from django.contrib.auth.password_validation import validate_password
 
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from .models import Invites
+from cloud_check_file.core.models import as_json
 from cloud_check_file.core.serializers import BaseSerializer
 
 
@@ -15,8 +18,13 @@ class LoginSerializer(TokenObtainPairSerializer):
         token = super(LoginSerializer, cls).get_token(user)
 
         # Add custom claims
+        invite = Invites.objects.filter(user=user).first()
+        if invite:
+            token['invite'] = True
+
         token['username'] = user.username
         token['id'] = user.id
+
 
         return token
 
@@ -29,7 +37,7 @@ class SignupSerializer(serializers.ModelSerializer):
         fields = ('username', 'password', 'first_name', 'last_name')
         extra_kwargs = {
             'first_name': {'required': True},
-            'last_name': {'required': True}
+            'last_name': {'required': True},
         }
 
     def create(self, validated_data):
@@ -49,5 +57,18 @@ class SignupSerializer(serializers.ModelSerializer):
 class UserSerializer(BaseSerializer):
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name')
+        fields = ('username', 'first_name', 'last_name', 'invites')
 
+    invites = serializers.SerializerMethodField()
+
+    def get_invites(self, obj):
+        return InviteSerializer(Invites.objects.filter(created_by=obj.id).all(), many=True, ).data
+        #return [{**model_to_dict(object), 'email': object.user.username} for object in as_json(Invites.objects.filter(created_by=obj.id).all())]
+
+
+class InviteSerializer(BaseSerializer):
+    class Meta:
+        model = Invites
+        fields = '__all__'
+        depth = 2
+   

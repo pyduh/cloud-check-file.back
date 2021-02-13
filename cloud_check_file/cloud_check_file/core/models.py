@@ -20,5 +20,5 @@ class BaseModel(models.Model):
     @classmethod
     def from_request(cls, request, *args, **kwargs):
         return cls(created_by=request.user.id, *args, **kwargs)
-    
+
 
