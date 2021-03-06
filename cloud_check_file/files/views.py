@@ -29,7 +29,7 @@ class PublicUploadApiView(GenericUploadApiView):
         match = False
         hash = get_file_hash(self.request.data['file'])
 
-        cache = get_cache(self.request.data['id'])
+        cache = None #get_cache(self.request.data['id'])
 
         if cache:
             match = cache['hash'] == hash   
@@ -90,7 +90,7 @@ class FileApiSet(BaseApiView):
         
         object = serializer.save()
 
-        create_or_update_cache(object.id, hash=object.upload.hash)
+        #create_or_update_cache(object.id, hash=object.upload.hash)
         
         return Response(data={'file_id': object.id}, status=201)
 

@@ -44,3 +44,4 @@ env
 db/**
 !db/db.md
 tmp-files/**
+**.config.**
