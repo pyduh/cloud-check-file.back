@@ -18,8 +18,6 @@ services:
         environment:
             - CLOUD_PROVIDER=AWS
             - AWS_USER=cloud-check-file
-            - AWS_ACCESS_KEY_ID=AKIA6I5EQH7JEYYJOJ45
-            - AWS_SECRET_ACCESS_KEY=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
             - DB=postgres://cloud_check_file:cloud_check_file@db/cloud_check_file
         depends_on:
             - db
