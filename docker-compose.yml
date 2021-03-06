@@ -16,9 +16,9 @@ services:
         command: >
             bash -c "cd cloud_check_file && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
         environment:
-            - CLOUD_PROVIDER=AWS
-            - AWS_USER=cloud-check-file
             - DB=postgres://cloud_check_file:cloud_check_file@db/cloud_check_file
+        env_file:
+            - .env
         depends_on:
             - db
     db:
