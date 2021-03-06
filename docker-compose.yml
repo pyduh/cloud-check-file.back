@@ -3,7 +3,7 @@ version: "3"
 services:
     frontend:
         build:
-            context: ../cloud-check-file/
+            context: ../cloud-check-file.front/
         ports:
             - "8080:80"
         depends_on:
