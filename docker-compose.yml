@@ -1,0 +1,33 @@
+version: "3"
+
+services:
+    frontend:
+        build:
+            context: ../cloud-check-file/
+        ports:
+            - "8080:80"
+        depends_on:
+            - backend
+    backend:
+        build:
+            context: .
+        ports:
+            - "8000:8000"
+        command: >
+            bash -c "cd cloud_check_file && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+        environment:
+            - CLOUD_PROVIDER=AWS
+            - AWS_USER=cloud-check-file
+            - AWS_ACCESS_KEY_ID=AKIA6I5EQH7JEYYJOJ45
+            - AWS_SECRET_ACCESS_KEY=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
+            - DB=postgres://cloud_check_file:cloud_check_file@db/cloud_check_file
+        depends_on:
+            - db
+    db:
+        image: postgres:13-alpine
+        environment:
+            - POSTGRES_DB=cloud_check_file
+            - POSTGRES_USER=cloud_check_file
+            - POSTGRES_PASSWORD=cloud_check_file
+        ports:
+            - "5432:5432"
